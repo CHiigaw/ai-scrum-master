@@ -1,0 +1,41 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+
+# dotenv file (contains your secrets!)
+.env
+
+# VSCode config
+.vscode/
+
+# Mac OS
+.DS_Store
+
+# Logs
+*.log
+
+# Python metadata
+*.egg-info/
+dist/
+build/
+
+# MyPy / Coverage / Test reports
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ollama downloads (optional, if you don’t want big model cache in Git)
+ollama/
