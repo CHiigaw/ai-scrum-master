@@ -2,39 +2,51 @@ from slack_bolt.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode.aiohttp import AsyncSocketModeHandler
 from app.config import SLACK_BOT_TOKEN, SLACK_APP_TOKEN
 from app.summarizer import get_ai_reply
+from app.standup_manager import handle_user_reply  # 👈 new
 import re
 
+app = AsyncApp(token=SLACK_BOT_TOKEN)
+
+# Clean text to remove user mentions (e.g. <@U123>)
 def clean_message(text: str) -> str:
     return re.sub(r"<@U\w+>", "@user", text)
-
-
-app = AsyncApp(token=SLACK_BOT_TOKEN)
 
 @app.event("message")
 async def handle_message_events(body, say, logger):
     print("📩 EVENT RECEIVED:")
-    print(body)  # raw slack event body
+    print(body)
 
-    user = body["event"].get("user")
-    text = body["event"].get("text")
-    if user and text:
-        print(f"User {user} said: {text}")
-        prompt = clean_message(text)
-        reply = await get_ai_reply(prompt)
-        await say(f"<@{user}> {reply}")
+    event = body.get("event", {})
+    user_id = event.get("user")
+    text = event.get("text")
+    channel_type = event.get("channel_type")
+
+    if not user_id or not text:
+        return
+
+    # 📬 Handle direct messages (private standup responses)
+    if channel_type == "im":
+        print(f"✏️ DM from {user_id}: {text}")
+        await handle_user_reply(user_id, text)
+        return
+
+    # 💬 For public messages in channels (fallback LLM reply)
+    prompt = clean_message(text)
+    reply = await get_ai_reply(prompt)
+    await say(f"<@{user_id}> {reply}")
 
 @app.event("app_mention")
 async def handle_app_mention_events(body, say, logger):
     user = body["event"].get("user")
     text = body["event"].get("text")
     logger.info(f"Mention from {user}: {text}")
+
     prompt = clean_message(text)
     reply = await get_ai_reply(prompt)
     await say(f"<@{user}> {reply}")
 
-
+# Socket mode runner
 handler = AsyncSocketModeHandler(app, SLACK_APP_TOKEN)
 
 async def slack_runner():
     await handler.start_async()
-

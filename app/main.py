@@ -22,3 +22,12 @@ from app.slack_utils import get_active_human_users
 def get_team_members():
     return get_active_human_users()
 
+# To test stand-up manager
+from app.standup_manager import run_standup
+
+@app.get("/run-standup")
+async def trigger_standup():
+    await run_standup()
+    return {"status": "✅ Standup executed and summary posted"}
+
+
