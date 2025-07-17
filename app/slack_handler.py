@@ -2,14 +2,21 @@ from slack_bolt.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode.aiohttp import AsyncSocketModeHandler
 from app.config import SLACK_BOT_TOKEN, SLACK_APP_TOKEN
 from app.summarizer import get_ai_reply
-from app.standup_manager import handle_user_reply  # 👈 new
+from app.standup_manager import handle_user_reply, run_standup  # ✭ added run_standup
 import re
 
 app = AsyncApp(token=SLACK_BOT_TOKEN)
 
 # Clean text to remove user mentions (e.g. <@U123>)
 def clean_message(text: str) -> str:
-    return re.sub(r"<@U\w+>", "@user", text)
+    return re.sub(r"<@U\\w+>", "@user", text)
+
+@app.command("/start-standup")
+async def command_start_standup(ack, respond, body):
+    await ack()
+    user = body.get("user_id")
+    await respond(f"👋 Starting the standup! Thanks <@{user}>.")
+    await run_standup()
 
 @app.event("message")
 async def handle_message_events(body, say, logger):
